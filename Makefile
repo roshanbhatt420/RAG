@@ -1,8 +1,7 @@
-build:
-	docker compose -f infra/docker-compose.yml build
+
 
 up:
-	docker compose -f infra/docker-compose.yml up -d
+	docker compose -f infra/docker-compose.yml up --build -d
 
 down:
 	docker compose -f infra/docker-compose.yml down
