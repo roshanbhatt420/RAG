@@ -1,9 +1,12 @@
 
 from fastapi import FastAPI,UploadFile, File
+from fastapi.concurrency import asynccontextmanager
 from fastapi.middleware.cors import CORSMiddleware
 import logging
 from api.routes import router
 from fastapi.responses import JSONResponse
+from upload_function.embedding import EmbeddingService
+from upload_function.v_store import QdrantService
 
 logging.basicConfig(level=logging.INFO,format="%(asctime)s [%(levelname)s] %(name)s: %(message)s")
 logger=logging.getLogger("docuchat")
@@ -18,7 +21,21 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    embedding_service = EmbeddingService()
+    qdrant_service = QdrantService()
+    # Ensure the Qdrant collection exists
+    vector_size = (embedding_service.model.get_sentence_embedding_dimension())
+    qdrant_service.ensure_collection(vector_size)
+    app.state.embedding_service = embedding_service
+    app.state.qdrant_service = qdrant_service
+    print("Embedding model loaded")
+    print("Qdrant collection ready")
 
+    yield
+
+    print("Application shutting down")
 app.include_router(router)
 
 
